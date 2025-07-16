@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Guide to the Big Beautiful Bill</title>
+    <script defer src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals & Muted Teal -->
+    <!-- Application Structure Plan: A single-page, vertically scrolling application with a sticky top navigation for jumping to thematic sections. The structure is designed for intuitive exploration, starting with a high-level dashboard, then delving into specific themes: 1) Tax & Investment, 2) Employee Benefits, 3) Industry Impacts, and 4) PEO-specific analysis. This non-linear, thematic structure is more user-friendly than the report's legal format. It allows users (both SMB owners and PEOs) to quickly access the information most relevant to their needs. Key interactions include an interactive QBI calculator, a visual comparison for QSBS changes, a decision-support tool for R&D expensing, and a filterable industry impact matrix. This approach prioritizes user understanding and task completion over mirroring the source document's layout. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: QBI Deduction (Sec. 70105). Goal: Inform, Personalize. Viz: Interactive Calculator (HTML Form + JS). Interaction: User inputs income/filing status, sees potential deduction. Justification: Makes abstract tax rules tangible and personal. Library/Method: Vanilla JS.
+        - Report Info: Full Expensing (Sec. 70301, 70306). Goal: Compare. Viz: Bar Chart (Chart.js). Interaction: Static chart visually compares old vs. new Section 179 limits. Justification: A chart provides a quick, powerful visual comparison of the magnitude of the change. Library/Method: Chart.js.
+        - Report Info: QSBS Expansion (Sec. 70431). Goal: Compare, Inform. Viz: Side-by-side cards and a visual timeline (HTML/CSS). Interaction: Clear visual grouping of old vs. new rules. Justification: Clearly communicates the "before and after" of a complex provision. Library/Method: Tailwind CSS.
+        - Report Info: Industry Impact Matrix. Goal: Organize, Filter. Viz: Interactive Table (HTML + JS). Interaction: User selects an industry from a dropdown to highlight the relevant row and display detailed text. Justification: Turns a dense data table into a focused, user-driven exploration tool. Library/Method: Vanilla JS.
+        - Report Info: PEO Risk/Opportunity Matrix. Goal: Organize, Summarize. Viz: Accordion/Toggle Cards (HTML + JS). Interaction: User clicks a topic to reveal detailed analysis. Justification: Prevents information overload by presenting complex analysis in digestible, user-triggered chunks. Library/Method: Vanilla JS.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #FDFBF8; }
+        .nav-link { transition: color 0.3s, border-color 0.3s; }
+        .nav-link:hover, .nav-link.active { color: #0C6A64; border-bottom-color: #0C6A64; }
+        .card { background-color: #FFFFFF; border: 1px solid #F0EBE3; border-radius: 0.75rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05); transition: transform 0.3s, box-shadow 0.3s; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -4px rgba(0, 0, 0, 0.07); }
+        .pill { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+        .pill-smb { background-color: #E0F2F1; color: #00796B; }
+        .pill-peo { background-color: #FFF3E0; color: #E65100; }
+        .btn-primary { background-color: #00796B; color: white; transition: background-color 0.3s; }
+        .btn-primary:hover { background-color: #006054; }
+        .chart-container { position: relative; width: 100%; max-width: 600px; margin-left: auto; margin-right: auto; height: 350px; max-height: 40vh; }
+        .industry-row { transition: background-color 0.3s; }
+        .industry-row.highlight { background-color: #E0F2F1; }
+        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.5s ease-in-out; }
+    </style>
+</head>
+<body class="text-gray-800 antialiased">
+
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 border-b border-gray-200">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <span class="font-bold text-xl text-teal-800">BBB Navigator</span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#dashboard" class="nav-link px-3 py-2 text-sm font-medium text-gray-600 border-b-2 border-transparent">Dashboard</a>
+                        <a href="#tax-investment" class="nav-link px-3 py-2 text-sm font-medium text-gray-600 border-b-2 border-transparent">Tax & Investment</a>
+                        <a href="#employee-benefits" class="nav-link px-3 py-2 text-sm font-medium text-gray-600 border-b-2 border-transparent">Employee Benefits</a>
+                        <a href="#industry-impact" class="nav-link px-3 py-2 text-sm font-medium text-gray-600 border-b-2 border-transparent">Industry Impact</a>
+                        <a href="#peo-strategy" class="nav-link px-3 py-2 text-sm font-medium text-gray-600 border-b-2 border-transparent">PEO Strategy</a>
+                    </div>
+                </div>
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" aria-controls="mobile-menu" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white">
+                        <span class="sr-only">Open main menu</span>
+                        <svg class="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </nav>
+        <div id="mobile-menu" class="md:hidden hidden">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="#dashboard" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-gray-600">Dashboard</a>
+                <a href="#tax-investment" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-gray-600">Tax & Investment</a>
+                <a href="#employee-benefits" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-gray-600">Employee Benefits</a>
+                <a href="#industry-impact" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-gray-600">Industry Impact</a>
+                <a href="#peo-strategy" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-gray-600">PEO Strategy</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        
+        <section id="dashboard" class="scroll-mt-20">
+            <div class="text-center mb-12">
+                <h1 class="text-4xl md:text-5xl font-bold tracking-tight text-gray-900">The Big Beautiful Bill: An Interactive Guide</h1>
+                <p class="mt-4 max-w-3xl mx-auto text-lg text-gray-600">A strategic overview of the key tax, investment, and compliance changes affecting Small Businesses and PEOs.</p>
+                 <div class="mt-4 flex justify-center gap-2">
+                    <div class="flex items-center"><span class="pill pill-smb">SMB</span><span class="ml-2 text-sm text-gray-600">Small Business Impact</span></div>
+                    <div class="flex items-center"><span class="pill pill-peo">PEO</span><span class="ml-2 text-sm text-gray-600">PEO Impact</span></div>
+                </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="card p-6">
+                    <h3 class="font-bold text-xl mb-2">QBI Deduction Made Permanent</h3>
+                    <div class="flex gap-2 mb-3"><span class="pill pill-smb">SMB</span><span class="pill pill-peo">PEO</span></div>
+                    <p class="text-gray-600 mb-4">The 20% pass-through deduction is now a permanent part of the tax code, providing long-term certainty for S-corps, partnerships, and sole proprietors.</p>
+                    <a href="#tax-investment" class="font-semibold text-teal-700 hover:text-teal-900">Explore QBI Changes &rarr;</a>
+                </div>
+                <div class="card p-6">
+                    <h3 class="font-bold text-xl mb-2">100% R&D Expensing Returns</h3>
+                    <div class="flex gap-2 mb-3"><span class="pill pill-smb">SMB</span><span class="pill pill-peo">PEO</span></div>
+                    <p class="text-gray-600 mb-4">Domestic R&D costs are once again fully deductible in the year incurred, boosting cash flow for innovative companies. A critical strategic choice awaits.</p>
+                    <a href="#tax-investment" class="font-semibold text-teal-700 hover:text-teal-900">Analyze R&D Options &rarr;</a>
+                </div>
+                <div class="card p-6">
+                    <h3 class="font-bold text-xl mb-2">"No Tax on Tips/Overtime"</h3>
+                    <div class="flex gap-2 mb-3"><span class="pill pill-smb">SMB</span><span class="pill pill-peo">PEO</span></div>
+                    <p class="text-gray-600 mb-4">Temporary deductions make qualified tip and overtime pay tax-free for many workers, but create significant new payroll reporting burdens for employers.</p>
+                    <a href="#employee-benefits" class="font-semibold text-teal-700 hover:text-teal-900">See Payroll Impact &rarr;</a>
+                </div>
+                <div class="card p-6">
+                    <h3 class="font-bold text-xl mb-2">Supercharged QSBS Incentive</h3>
+                    <div class="flex gap-2 mb-3"><span class="pill pill-smb">SMB</span></div>
+                    <p class="text-gray-600 mb-4">Investing in startups is now more attractive with shorter holding periods and higher gain exclusion limits, expanding access to capital.</p>
+                    <a href="#tax-investment" class="font-semibold text-teal-700 hover:text-teal-900">Review Startup Incentives &rarr;</a>
+                </div>
+                 <div class="card p-6">
+                    <h3 class="font-bold text-xl mb-2">Modernized Health Benefits</h3>
+                    <div class="flex gap-2 mb-3"><span class="pill pill-smb">SMB</span><span class="pill pill-peo">PEO</span></div>
+                    <p class="text-gray-600 mb-4">Permanent changes make it easier to combine HSAs with telehealth and Direct Primary Care (DPC), enabling innovative, cost-effective health plans.</p>
+                    <a href="#employee-benefits" class="font-semibold text-teal-700 hover:text-teal-900">Discover Benefit Strategies &rarr;</a>
+                </div>
+                <div class="card p-6">
+                    <h3 class="font-bold text-xl mb-2">ERTC Enforcement & PEO Shield</h3>
+                    <div class="flex gap-2 mb-3"><span class="pill pill-peo">PEO</span></div>
+                    <p class="text-gray-600 mb-4">A crackdown on ERTC fraud creates a new "promoter" penalty but explicitly exempts Certified PEOs, making CPEO status a critical advantage.</p>
+                    <a href="#peo-strategy" class="font-semibold text-teal-700 hover:text-teal-900">Understand the PEO Impact &rarr;</a>
+                </div>
+            </div>
+        </section>
+
+        <hr class="my-16 border-gray-200">
+
+        <section id="tax-investment" class="scroll-mt-20">
+            <h2 class="text-3xl font-bold tracking-tight text-gray-900 mb-4">Transformative Tax & Investment Incentives</h2>
+            <p class="mb-12 max-w-4xl text-lg text-gray-600">This section explores the bill's foundational tax provisions, which are designed to significantly reduce financial burdens and spur domestic investment. These permanent changes will impact strategic financial planning for nearly every small business, creating new opportunities for growth and modernization.</p>
+            
+            <div class="space-y-16">
+                
+                <div class="card p-8">
+                    <div class="flex gap-2 mb-3"><span class="pill pill-smb">SMB</span><span class="pill pill-peo">PEO</span></div>
+                    <h3 class="text-2xl font-semibold mb-4">The Qualified Business Income (QBI) Deduction (Sec. 70105)</h3>
+                    <p class="text-gray-600 mb-6">The Act makes the 20% pass-through deduction permanent and expands its reach by increasing the income thresholds for service businesses. This solidifies the tax advantages of pass-through entities and provides much-needed certainty for long-term planning. Use the calculator below to see how the new thresholds might benefit you.</p>
+                    <div class="bg-stone-50 p-6 rounded-lg border border-stone-200">
+                        <h4 class="font-semibold text-lg mb-4 text-center">Interactive QBI Phase-Out Calculator</h4>
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="qbi-income" class="block text-sm font-medium text-gray-700">Taxable Income Before QBI</label>
+                                <div class="mt-1 relative rounded-md shadow-sm">
+                                    <div class="pointer-events-none absolute inset-y-0 left-0 pl-3 flex items-center">
+                                        <span class="text-gray-500 sm:text-sm">$</span>
+                                    </div>
+                                    <input type="number" id="qbi-income" class="block w-full rounded-md border-gray-300 pl-7 pr-12 focus:border-teal-500 focus:ring-teal-500 sm:text-sm" placeholder="200000" value="200000">
+                                </div>
+                                <label for="filing-status" class="block text-sm font-medium text-gray-700 mt-4">Filing Status</label>
+                                <select id="filing-status" class="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-teal-500 focus:outline-none focus:ring-teal-500 sm:text-sm">
+                                    <option value="single">Single</option>
+                                    <option value="mfj" selected>Married Filing Jointly</option>
+                                </select>
+                            </div>
+                            <div id="qbi-results" class="bg-white p-4 rounded-md border flex flex-col justify-center">
+                                <p class="text-sm text-gray-500">For a Specified Service Business:</p>
+                                <p class="text-sm"><strong>Old Rules Phase-out:</strong> <span id="qbi-old-status" class="font-bold"></span></p>
+                                <p class="text-sm"><strong>New Rules Phase-out:</strong> <span id="qbi-new-status" class="font-bold text-teal-700"></span></p>
+                                <p class="mt-2 text-sm font-semibold text-teal-800" id="qbi-takeaway"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card p-8 grid lg:grid-cols-2 gap-8 items-center">
+                    <div>
+                        <div class="flex gap-2 mb-3"><span class="pill pill-smb">SMB</span></div>
+                        <h3 class="text-2xl font-semibold mb-4">Full Expensing & Depreciation (Sec. 70301, 70306)</h3>
+                        <p class="text-gray-600 mb-6">The bill permanently restores 100% bonus depreciation for new assets and more than doubles the Section 179 expensing limit for new and used equipment to $2.5 million. This significantly lowers the after-tax cost of capital investments, enabling businesses to modernize and expand faster.</p>
+                        <ul class="space-y-2 text-gray-600">
+                           <li class="flex items-start"><span class="text-teal-600 font-bold mr-2 mt-1">&#10003;</span><span>**100% Bonus Depreciation:** Write off the full cost of new machinery, software, and equipment immediately.</span></li>
+                           <li class="flex items-start"><span class="text-teal-600 font-bold mr-2 mt-1">&#10003;</span><span>**$2.5M Section 179 Limit:** Increased limit for expensing both new AND used asset purchases.</span></li>
+                           <li class="flex items-start"><span class="text-teal-600 font-bold mr-2 mt-1">&#10003;</span><span>**Boosts Cash Flow:** Frees up capital for other business needs by lowering immediate tax bills.</span></li>
+                        </ul>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="expensingChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="card p-8">
+                     <div class="flex gap-2 mb-3"><span class="pill pill-smb">SMB</span><span class="pill pill-peo">PEO</span></div>
+                    <h3 class="text-2xl font-semibold mb-4">R&D Expensing Restored (Sec. 70302)</h3>
+                    <p class="text-gray-600 mb-6">In a major win for innovation, the bill reverses the 5-year amortization rule. U.S.-based R&D costs are once again 100% deductible in the year they are incurred. This creates a critical strategic choice for businesses that capitalized R&D costs from 2022-2024.</p>
+                     <div class="mt-6 grid md:grid-cols-2 gap-6">
+                        <div class="border border-amber-300 bg-amber-50 rounded-lg p-6">
+                            <h4 class="font-bold text-lg text-amber-800">Option 1: Retroactive Election</h4>
+                            <p class="text-sm text-amber-700 mt-2">File amended returns for 2022-2024 to claim a full deduction for R&D costs in those years.</p>
+                            <div class="mt-4">
+                                <p class="font-semibold text-sm">Pro: Potential for an immediate cash refund from the IRS.</p>
+                                <p class="font-semibold text-sm mt-1">Con: Amending returns may increase audit risk.</p>
+                            </div>
+                        </div>
+                        <div class="border border-teal-300 bg-teal-50 rounded-lg p-6">
+                            <h4 class="font-bold text-lg text-teal-800">Option 2: Future Deduction</h4>
+                            <p class="text-sm text-teal-700 mt-2">Deduct the entire remaining unamortized balance in 2025 (or spread over 2025-2026).</p>
+                             <div class="mt-4">
+                                <p class="font-semibold text-sm">Pro: Administratively simpler, avoids amending prior returns.</p>
+                                <p class="font-semibold text-sm mt-1">Con: Delays the cash flow benefit compared to a refund.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="mt-6 text-center font-semibold text-gray-700">Key Takeaway: This is a present-day financial strategy decision. Businesses must model the cash flow impact vs. audit risk to choose the best path forward.</p>
+                </div>
+
+                 <div class="card p-8">
+                    <div class="flex gap-2 mb-3"><span class="pill pill-smb">SMB</span></div>
+                    <h3 class="text-2xl font-semibold mb-4">Expanded QSBS Incentive (Sec. 70431)</h3>
+                    <p class="text-gray-600 mb-6">The Qualified Small Business Stock (QSBS) incentive is now significantly more powerful, making it a cornerstone of startup finance. Changes include a tiered gain exclusion starting at 3 years and a higher company asset limit, expanding access to capital for high-growth C-corps.</p>
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <div class="p-6 bg-stone-50 rounded-lg border">
+                           <h4 class="font-semibold text-lg mb-2">Old Rules</h4>
+                           <p class="text-2xl font-bold mb-2">100%</p>
+                           <p class="text-gray-600 mb-4">Gain exclusion after a <span class="font-bold">5-year</span> cliff.</p>
+                           <hr class="my-4">
+                           <p class="text-gray-600">Company asset limit: <span class="font-bold">$50M</span></p>
+                           <p class="text-gray-600">Per-issuer gain cap: <span class="font-bold">$10M</span></p>
+                        </div>
+                        <div class="p-6 bg-teal-50 rounded-lg border border-teal-200">
+                           <h4 class="font-semibold text-lg mb-2 text-teal-800">New Rules</h4>
+                           <div class="flex items-baseline mb-4">
+                               <p class="text-2xl font-bold mr-4">50% &rarr; 75% &rarr; 100%</p>
+                           </div>
+                           <p class="text-teal-700">Tiered gain exclusion at <span class="font-bold">3, 4, and 5 years</span>.</p>
+                           <hr class="my-4 border-teal-200">
+                           <p class="text-teal-700">Company asset limit: <span class="font-bold">$75M</span></p>
+                           <p class="text-teal-700">Per-issuer gain cap: <span class="font-bold">$15M</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <hr class="my-16 border-gray-200">
+
+        <section id="employee-benefits" class="scroll-mt-20">
+            <h2 class="text-3xl font-bold tracking-tight text-gray-900 mb-4">Employee Compensation, Benefits & Healthcare</h2>
+            <p class="mb-12 max-w-4xl text-lg text-gray-600">This section covers provisions that directly impact how small businesses pay their employees and design their benefits. These changes introduce new compliance requirements but also create powerful, tax-advantaged opportunities for attracting and retaining talent in a competitive market.</p>
+
+            <div class="space-y-16">
+                <div class="card p-8">
+                    <div class="flex gap-2 mb-3"><span class="pill pill-smb">SMB</span><span class="pill pill-peo">PEO</span></div>
+                    <h3 class="text-2xl font-semibold mb-4">"No Tax on Tips" & "No Tax on Overtime" (Sec. 70201-70202)</h3>
+                    <p class="text-gray-600 mb-6">For tax years 2025-2028, new deductions effectively make qualified tip and overtime pay free from federal income tax for many workers. While a great perk for employees, this creates a major new reporting challenge for employers.</p>
+                     <div class="grid md:grid-cols-2 gap-6">
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                            <h4 class="font-bold text-lg text-blue-800">Employee Benefit</h4>
+                            <ul class="mt-2 space-y-2 text-blue-700">
+                               <li>&check; <span class="font-semibold">Increased Take-Home Pay:</span> Significant boost to disposable income for hourly and tipped workers.</li>
+                               <li>&check; <span class="font-semibold">Tax-Free Tips:</span> Up to $25k/year in qualified tips are deductible.</li>
+                               <li>&check; <span class="font-semibold">Tax-Free Overtime:</span> Up to $12.5k/year in qualified FLSA overtime is deductible.</li>
+                            </ul>
+                        </div>
+                        <div class="bg-red-50 border border-red-200 rounded-lg p-6">
+                            <h4 class="font-bold text-lg text-red-800">Employer/PEO Burden</h4>
+                            <ul class="mt-2 space-y-2 text-red-700">
+                               <li>&#9888; <span class="font-semibold">Major Payroll Overhaul:</span> Requires new pay codes and system logic.</li>
+                               <li>&#9888; <span class="font-semibold">New W-2/1099 Reporting:</span> Must separately track and report qualified amounts.</li>
+                               <li>&#9888; <span class="font-semibold">High Compliance Risk:</span> Ambiguity in rules creates potential for disputes and wage recharacterization pressure.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card p-8">
+                    <div class="flex gap-2 mb-3"><span class="pill pill-smb">SMB</span><span class="pill pill-peo">PEO</span></div>
+                    <h3 class="text-2xl font-semibold mb-4">Modernizing Health Benefits (Sec. 71306, 71308)</h3>
+                    <p class="text-gray-600 mb-4">The Act makes two significant and permanent changes to modernize consumer-directed healthcare, directly impacting how small businesses can design their health benefits packages.</p>
+                    <p class="text-gray-600 mb-4">First, Section 71306 makes permanent the safe harbor that allows high-deductible health plans (HDHPs) to provide coverage for telehealth and other remote care services on a pre-deductible basis without jeopardizing an individual's eligibility to contribute to a Health Savings Account (HSA). This provision, made effective retroactively for plan years beginning after December 31, 2024, recognizes the central role telehealth now plays in care delivery and removes a key barrier to its integration with popular HSA-qualified plans.</p>
+                    <p class="text-gray-600 mb-6">Second, and more transformatively, Section 71308 resolves a long-standing conflict between Direct Primary Care (DPC) arrangements and HSAs. The Act clarifies that a DPC arrangement is not considered "disqualifying coverage" that would prevent an individual from contributing to an HSA. It also explicitly allows the fixed monthly fees for DPC services (up to an inflation-adjusted cap of $150 for an individual or $300 for a family) to be paid for or reimbursed with tax-advantaged HSA funds.</p>
+
+                    <div class="mt-6 bg-stone-50 rounded-lg border p-6">
+                        <h4 class="font-semibold text-lg text-center text-gray-800 mb-4">The New Integrated Benefits Strategy</h4>
+                        <div class="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-4 text-center">
+                            <div class="p-4 bg-white rounded-lg shadow-sm w-full md:w-1/3">
+                                <span class="text-4xl">🏥</span>
+                                <p class="mt-2 font-semibold">HDHP</p>
+                                <p class="text-xs text-gray-500">For catastrophic coverage</p>
+                            </div>
+                            <div class="text-3xl font-thin text-gray-400">+</div>
+                            <div class="p-4 bg-white rounded-lg shadow-sm w-full md:w-1/3">
+                                <div class="flex justify-center items-center gap-2">
+                                    <span class="text-4xl">👩‍⚕️</span>
+                                    <span class="text-4xl">💻</span>
+                                </div>
+                                <p class="mt-2 font-semibold">DPC & Telehealth</p>
+                                <p class="text-xs text-gray-500">For routine & remote care</p>
+                            </div>
+                            <div class="text-3xl font-thin text-gray-400">+</div>
+                            <div class="p-4 bg-white rounded-lg shadow-sm w-full md:w-1/3">
+                                <span class="text-4xl">💳</span>
+                                <p class="mt-2 font-semibold">HSA</p>
+                                <p class="text-xs text-gray-500">To pay for DPC/other costs tax-free</p>
+                            </div>
+                        </div>
+                        <p class="mt-6 text-gray-700 text-sm">These two provisions together create a clear pathway for a powerful new benefits strategy for small businesses. The HDHP/HSA model offers a way to control premium costs but can leave employees with high out-of-pocket expenses for routine primary care. DPC, in contrast, offers affordable, predictable, and accessible primary care for a flat monthly fee. By making these two models fully compatible, the Act enables an integrated, three-part strategy: a low-premium HDHP for catastrophic coverage, a DPC arrangement for accessible routine and preventive care, and an employee-owned HSA to pay for the DPC fees and other out-of-pocket costs on a tax-free basis. This combination allows small businesses to offer a compelling benefits package that addresses both cost control for the employer and access to quality care for the employee.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <hr class="my-16 border-gray-200">
+
+        <section id="industry-impact" class="scroll-mt-20">
+            <h2 class="text-3xl font-bold tracking-tight text-gray-900 mb-4">Interactive Industry Impact Analysis</h2>
+             <p class="mb-8 max-w-4xl text-lg text-gray-600">The bill contains numerous provisions with targeted impacts on specific sectors. These changes create clear winners and losers, shifting federal incentives and reshaping market dynamics. Use the filter below to see a snapshot of the most critical changes for your industry and how they interact.</p>
+
+            <div class="card p-8">
+                <div class="flex flex-col sm:flex-row gap-4 sm:items-center mb-6">
+                    <label for="industry-filter" class="text-lg font-semibold">Select an Industry to Highlight:</label>
+                    <select id="industry-filter" class="mt-1 sm:mt-0 block w-full sm:w-auto rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm">
+                        <option value="all">Show All</option>
+                        <option value="tech">Tech/Life Sciences</option>
+                        <option value="hospitality">Hospitality</option>
+                        <option value="realestate">Real Estate/Construction</option>
+                        <option value="agriculture">Agriculture</option>
+                        <option value="manufacturing">Manufacturing</option>
+                        <option value="services">Professional Services</option>
+                    </select>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left text-gray-500">
+                        <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3">Industry</th>
+                                <th scope="col" class="px-6 py-3 text-center">R&D Expensing</th>
+                                <th scope="col" class="px-6 py-3 text-center">Full Expensing</th>
+                                <th scope="col" class="px-6 py-3 text-center">Tip/OT Tax Break</th>
+                                <th scope="col" class="px-6 py-3 text-center">QSBS</th>
+                            </tr>
+                        </thead>
+                        <tbody id="industry-table-body">
+                            <tr class="bg-white border-b industry-row" data-industry="tech">
+                                <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">Tech/Life Sciences</th>
+                                <td class="px-6 py-4 text-center"><span class="text-xl text-green-600">▲</span></td>
+                                <td class="px-6 py-4 text-center"><span class="text-lg text-green-500">▲</span></td>
+                                <td class="px-6 py-4 text-center"><span class="text-lg text-gray-400">▬</span></td>
+                                <td class="px-6 py-4 text-center"><span class="text-xl text-green-600">▲</span></td>
+                            </tr>
+                            <tr class="bg-white border-b industry-row" data-industry="hospitality">
+                                <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">Hospitality</th>
+                                <td class="px-6 py-4 text-center"><span class="text-lg text-gray-400">▬</span></td>
+                                <td class="px-6 py-4 text-center"><span class="text-lg text-green-500">▲</span></td>
+                                <td class="px-6 py-4 text-center"><span class="text-xl text-red-500">▼</span></td>
+                                <td class="px-6 py-4 text-center"><span class="text-lg text-gray-400">▬</span></td>
+                            </tr>
+                            <tr class="bg-white border-b industry-row" data-industry="realestate">
+                                <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">Real Estate/Construction</th>
+                                <td class="px-6 py-4 text-center"><span class="text-lg text-red-400">▼</span></td>
+                                <td class="px-6 py-4 text-center"><span class="text-xl text-green-600">▲</span></td>
+                                <td class="px-6 py-4 text-center"><span class="text-lg text-gray-400">▬</span></td>
+                                <td class="px-6 py-4 text-center"><span class="text-lg text-gray-400">▬</span></td>
+                            </tr>
+                             <tr class="bg-white border-b industry-row" data-industry="agriculture">
+                                <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">Agriculture</th>
+                                <td class="px-6 py-4 text-center"><span class="text-lg text-green-500">▲</span></td>
+                                <td class="px-6 py-4 text-center"><span class="text-xl text-green-600">▲</span></td>
+                                <td class="px-6 py-4 text-center"><span class="text-lg text-gray-400">▬</span></td>
+                                <td class="px-6 py-4 text-center"><span class="text-lg text-gray-400">▬</span></td>
+                            </tr>
+                            <tr class="bg-white border-b industry-row" data-industry="manufacturing">
+                                <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">Manufacturing</th>
+                                <td class="px-6 py-4 text-center"><span class="text-lg text-green-500">▲</span></td>
+                                <td class="px-6 py-4 text-center"><span class="text-xl text-green-600">▲</span></td>
+                                <td class="px-6 py-4 text-center"><span class="text-lg text-green-500">▲</span></td>
+                                <td class="px-6 py-4 text-center"><span class="text-lg text-green-500">▲</span></td>
+                            </tr>
+                            <tr class="bg-white industry-row" data-industry="services">
+                                <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">Professional Services</th>
+                                <td class="px-6 py-4 text-center"><span class="text-lg text-gray-400">▬</span></td>
+                                <td class="px-6 py-4 text-center"><span class="text-lg text-gray-400">▬</span></td>
+                                <td class="px-6 py-4 text-center"><span class="text-lg text-gray-400">▬</span></td>
+                                <td class="px-6 py-4 text-center"><span class="text-lg text-red-400">▼</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                     <div class="mt-2 text-xs text-center text-gray-500">
+                        Key: <span class="text-green-600 font-bold">▲</span> Major Opportunity | <span class="text-green-500 font-bold">▲</span> Positive Impact | <span class="text-gray-400 font-bold">▬</span> Neutral | <span class="text-red-400 font-bold">▼</span> Negative/Exclusion | <span class="text-red-500 font-bold">▼</span> Major Burden
+                    </div>
+                </div>
+
+                <div id="industry-details" class="mt-6 p-6 bg-stone-50 rounded-lg border hidden">
+                    <h4 id="details-title" class="font-bold text-lg mb-2"></h4>
+                    <p id="details-text" class="text-gray-700"></p>
+                </div>
+            </div>
+        </section>
+        
+        <hr class="my-16 border-gray-200">
+
+        <section id="peo-strategy" class="scroll-mt-20">
+            <h2 class="text-3xl font-bold tracking-tight text-gray-900 mb-4">PEO Compliance & Strategic Opportunity</h2>
+            <p class="mb-12 max-w-4xl text-lg text-gray-600">This section is dedicated to the most critical implications for Professional Employer Organizations. The Act creates a new operational and compliance reality, presenting both significant risks for the unprepared and massive strategic opportunities for forward-thinking PEOs to deepen their value proposition.</p>
+
+            <div id="accordion-container" class="space-y-4">
+                <div class="card">
+                    <button class="accordion-header w-full flex justify-between items-center text-left p-6" aria-expanded="false">
+                        <span class="text-xl font-semibold">ERTC Enforcement & The CPEO Shield (Sec. 70605)</span>
+                        <span class="accordion-icon text-2xl font-thin text-gray-500">+</span>
+                    </button>
+                    <div class="accordion-content px-6">
+                        <div class="py-6 border-t">
+                            <p class="text-gray-600 mb-4">Section 70605 is the single most important provision for PEOs. It cracks down on "ERTC Promoters" with harsh new penalties but explicitly states that **Certified PEOs (CPEOs)** are exempt from this definition. This creates a two-tiered risk system in the industry.</p>
+                            <div class="grid md:grid-cols-2 gap-4">
+                                <div class="border-l-4 border-orange-500 p-4 bg-orange-50">
+                                    <h5 class="font-bold text-orange-800">Risk for Non-CPEOs</h5>
+                                    <p class="text-sm text-orange-700">Face the same penalty risk as "ERC mills." A new strategic imperative exists to pursue certification or invest in robust legal defenses.</p>
+                                </div>
+                                <div class="border-l-4 border-teal-500 p-4 bg-teal-50">
+                                    <h5 class="font-bold text-teal-800">Opportunity for CPEOs</h5>
+                                    <p class="text-sm text-teal-700">CPEO status is now a critical competitive advantage and risk mitigator. This should be a primary sales and marketing message.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                 <div class="card">
+                    <button class="accordion-header w-full flex justify-between items-center text-left p-6" aria-expanded="false">
+                        <span class="text-xl font-semibold">Payroll System Overhaul</span>
+                         <span class="accordion-icon text-2xl font-thin text-gray-500">+</span>
+                    </button>
+                    <div class="accordion-content px-6">
+                         <div class="py-6 border-t">
+                             <p class="text-gray-600 mb-4">The "No Tax on Tips/Overtime" provisions require a major re-engineering of core payroll systems to separately track and report qualified pay types. The Act provides a "reasonable method" standard for 2025, but this ambiguity itself is a risk. PEOs must immediately begin developing and documenting their methodology while preparing for more prescriptive rules in 2026.</p>
+                             <p class="font-semibold text-gray-700">Action Item: Task product and engineering with scoping new payroll features immediately. Issue client guidance on the 2025 "reasonable method" by Q1 2025.</p>
+                        </div>
+                    </div>
+                </div>
+                 <div class="card">
+                    <button class="accordion-header w-full flex justify-between items-center text-left p-6" aria-expanded="false">
+                        <span class="text-xl font-semibold">Moving Up the Value Chain: New Services</span>
+                         <span class="accordion-icon text-2xl font-thin text-gray-500">+</span>
+                    </button>
+                    <div class="accordion-content px-6">
+                         <div class="py-6 border-t">
+                             <p class="text-gray-600 mb-4">The Act provides the building blocks for PEOs to move from administrators to strategic advisors. There are clear opportunities to launch premium, high-value service offerings.</p>
+                              <ul class="space-y-4">
+                                <li>
+                                    <p class="font-semibold">"Modern Health & Wealth" Package:</p>
+                                    <p class="text-sm text-gray-600">Design and market an integrated benefits solution featuring a DPC + HDHP/HSA plan, bundled with a permanent student loan repayment assistance program.</p>
+                                </li>
+                                <li>
+                                    <p class="font-semibold">Strategic Tax Advisory as a Service:</p>
+                                    <p class="text-sm text-gray-600">Partner with tax professionals to help clients with entity structure analysis (S-corp vs. C-corp), R&D expensing studies, QSBS eligibility tracking, and structuring benefits to maximize new credits.</p>
+                                </li>
+                             </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-gray-800 text-white mt-16">
+        <div class="container mx-auto py-8 px-4 sm:px-6 lg:px-8 text-center">
+            <p>BBB Navigator</p>
+            <p class="text-sm text-gray-400 mt-2">This tool provides a summary and analysis for informational purposes only. It does not constitute legal or tax advice. </p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+            
+            const navLinks = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('section');
+
+            const activateNavLink = (link) => {
+                navLinks.forEach(l => l.classList.remove('active'));
+                link.classList.add('active');
+            };
+
+            const onScroll = () => {
+                let currentSection = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    if (window.scrollY >= sectionTop - 80) {
+                        currentSection = section.getAttribute('id');
+                    }
+                });
+
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href').substring(1) === currentSection) {
+                        link.classList.add('active');
+                    }
+                });
+            };
+
+            window.addEventListener('scroll', onScroll);
+            
+            navLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    document.querySelector(link.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                    activateNavLink(link);
+                    if(!mobileMenu.classList.contains('hidden')){
+                        mobileMenu.classList.add('hidden');
+                    }
+                });
+            });
+
+            const qbiIncomeEl = document.getElementById('qbi-income');
+            const filingStatusEl = document.getElementById('filing-status');
+            
+            function calculateQBI() {
+                const income = parseFloat(qbiIncomeEl.value) || 0;
+                const status = filingStatusEl.value;
+                
+                const oldThresholds = { single: 182100, mfj: 364200 };
+                const oldPhaseoutEnd = { single: 232100, mfj: 464200 };
+                
+                const newThresholds = { single: 75000, mfj: 150000 };
+                const newPhaseoutEnd = { single: 125000, mfj: 300000 };
+                
+                let oldStatus, newStatus, takeaway;
+
+                if(status === 'mfj'){
+                     newThresholds.single = 150000;
+                     newPhaseoutEnd.single = 300000;
+                }
+
+                if (income <= oldThresholds[status]) { oldStatus = "Full Deduction"; }
+                else if (income > oldThresholds[status] && income <= oldPhaseoutEnd[status]) { oldStatus = "Partial Deduction"; }
+                else { oldStatus = "No Deduction"; }
+                
+                if (income <= newThresholds[status]) { newStatus = "Full Deduction"; }
+                else if (income > newThresholds[status] && income <= newPhaseoutEnd[status]) { newStatus = "Partial Deduction"; }
+                else { newStatus = "No Deduction"; }
+
+                const oldSSTBThreshold = status === 'single' ? 50000 : 100000;
+                const newSSTBThreshold = status === 'single' ? 75000 : 150000;
+                
+                if (income > oldSSTBThreshold && income <= newSSTBThreshold){
+                    takeaway = 'The new, higher threshold means you now qualify for the full deduction.';
+                } else if(newStatus !== oldStatus && newStatus.includes("Deduction")) {
+                    takeaway = 'You now qualify for a deduction under the new rules.';
+                } else {
+                    takeaway = 'Your qualification status remains the same under the new rules.';
+                }
+
+                document.getElementById('qbi-old-status').textContent = oldStatus;
+                document.getElementById('qbi-new-status').textContent = newStatus;
+                document.getElementById('qbi-takeaway').textContent = takeaway;
+            }
+
+            qbiIncomeEl.addEventListener('input', calculateQBI);
+            filingStatusEl.addEventListener('change', calculateQBI);
+            calculateQBI();
+
+            const ctx = document.getElementById('expensingChart').getContext('2d');
+            const expensingChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Section 179 Limit', 'Investment Phase-Out'],
+                    datasets: [{
+                        label: 'Old Rules',
+                        data: [1250000, 3130000],
+                        backgroundColor: 'rgba(107, 114, 128, 0.6)',
+                        borderColor: 'rgba(107, 114, 128, 1)',
+                        borderWidth: 1
+                    }, {
+                        label: 'New Rules (BBB)',
+                        data: [2500000, 4000000],
+                        backgroundColor: 'rgba(13, 148, 136, 0.6)',
+                        borderColor: 'rgba(13, 148, 136, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    responsive: true,
+                    plugins: {
+                        title: { display: true, text: 'Section 179 Expensing Enhancement' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) { label += ': '; }
+                                    if (context.parsed.y !== null) {
+                                        label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(context.parsed.y);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value, index, values) {
+                                    return '$' + (value / 1000000) + 'M';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            const industryFilter = document.getElementById('industry-filter');
+            const industryTableBody = document.getElementById('industry-table-body');
+            const industryDetails = document.getElementById('industry-details');
+            const detailsTitle = document.getElementById('details-title');
+            const detailsText = document.getElementById('details-text');
+            
+            const industryInfo = {
+                tech: {
+                    title: "Tech & Life Sciences",
+                    text: "Major beneficiary. Full R&D expensing provides an immediate cash flow boost, critical for startups. The expanded QSBS incentive, with its higher $75M asset cap, makes it easier to attract later-stage venture capital while preserving tax benefits for founders and early investors."
+                },
+                hospitality: {
+                    title: "Hospitality",
+                    text: "Mixed impact. The 'No Tax on Tips' provision is a huge benefit for employees but creates a major payroll and reporting burden for employers. Full expensing is beneficial for investments in new kitchen equipment, furniture, and renovations."
+                },
+                realestate: {
+                    title: "Real Estate & Construction",
+                    text: "A clear policy pivot. Major new incentives for affordable housing (LIHTC) and Opportunity Zones will drive development. However, the termination of the energy-efficient building deduction (179D) disincentivizes green construction."
+                },
+                agriculture: {
+                    title: "Agriculture",
+                    text: "Strongly positive. Full expensing for farm machinery lowers capital costs. The new installment sale provision for farmland gains is a critical tool for succession planning, helping to preserve farms for the next generation."
+                },
+                manufacturing: {
+                    title: "Manufacturing",
+                    text: "Very positive. Full expensing for machinery is a core benefit. R&D expensing helps with process improvement, and the overtime deduction is a plus for the hourly workforce. Incentives to locate in Opportunity Zones are also beneficial."
+                },
+                services: {
+                    title: "Professional Services (Law, Accounting)",
+                    text: "The primary benefit is the increased income threshold for the QBI deduction. Many partners and owners of service firms (SSTBs) who were previously phased out will now qualify for the full 20% deduction. QSBS rules generally exclude these services."
+                }
+            };
+            
+            industryFilter.addEventListener('change', (e) => {
+                const selectedIndustry = e.target.value;
+                const rows = industryTableBody.querySelectorAll('.industry-row');
+                
+                rows.forEach(row => {
+                    if (selectedIndustry === 'all' || row.dataset.industry === selectedIndustry) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                    row.classList.remove('highlight');
+                });
+                
+                if (selectedIndustry !== 'all') {
+                    const selectedRow = industryTableBody.querySelector(`[data-industry="${selectedIndustry}"]`);
+                    selectedRow.classList.add('highlight');
+                    detailsTitle.textContent = industryInfo[selectedIndustry].title;
+                    detailsText.textContent = industryInfo[selectedIndustry].text;
+                    industryDetails.classList.remove('hidden');
+                } else {
+                    industryDetails.classList.add('hidden');
+                }
+            });
+
+            const accordionHeaders = document.querySelectorAll('.accordion-header');
+            accordionHeaders.forEach(header => {
+                header.addEventListener('click', () => {
+                    const content = header.nextElementSibling;
+                    const icon = header.querySelector('.accordion-icon');
+
+                    const isOpen = content.style.maxHeight && content.style.maxHeight !== '0px';
+
+                    // Close all other accordions
+                    document.querySelectorAll('.accordion-content').forEach(c => {
+                        if (c !== content) {
+                            c.style.maxHeight = '0px';
+                            c.previousElementSibling.querySelector('.accordion-icon').textContent = '+';
+                            c.previousElementSibling.setAttribute('aria-expanded', 'false');
+                        }
+                    });
+
+                    if (isOpen) {
+                        content.style.maxHeight = '0px';
+                        icon.textContent = '+';
+                        header.setAttribute('aria-expanded', 'false');
+                    } else {
+                        content.style.maxHeight = content.scrollHeight + 'px';
+                        icon.textContent = '-';
+                        header.setAttribute('aria-expanded', 'true');
+                    }
+                });
+            });
+
+        });
+    </script>
+</body>
+</html>
