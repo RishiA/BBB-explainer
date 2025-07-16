@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="BBB Navigator – an interactive single-page guide that demystifies the Big Beautiful Bill for SMBs and PEOs.">
     <title>Interactive Guide to the Big Beautiful Bill</title>
-    <script defer src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -17,6 +18,8 @@
         - Report Info: QSBS Expansion (Sec. 70431). Goal: Compare, Inform. Viz: Side-by-side cards and a visual timeline (HTML/CSS). Interaction: Clear visual grouping of old vs. new rules. Justification: Clearly communicates the "before and after" of a complex provision. Library/Method: Tailwind CSS.
         - Report Info: Industry Impact Matrix. Goal: Organize, Filter. Viz: Interactive Table (HTML + JS). Interaction: User selects an industry from a dropdown to highlight the relevant row and display detailed text. Justification: Turns a dense data table into a focused, user-driven exploration tool. Library/Method: Vanilla JS.
         - Report Info: PEO Risk/Opportunity Matrix. Goal: Organize, Summarize. Viz: Accordion/Toggle Cards (HTML + JS). Interaction: User clicks a topic to reveal detailed analysis. Justification: Prevents information overload by presenting complex analysis in digestible, user-triggered chunks. Library/Method: Vanilla JS.
+        - Report Info: Child Care Credit (Sec. 70401). Goal: Inform, Compare. Viz: Side-by-side cards (HTML/CSS). Interaction: Visually contrasts old vs. new credit amounts. Justification: Highlights the dramatic increase in the incentive's value. Library/Method: Tailwind CSS.
+        - Report Info: 1099 Reporting. Goal: Inform. Viz: Simple text and icon cards (HTML/CSS). Interaction: Static display. Justification: Clearly communicates the new, higher reporting thresholds. Library/Method: Tailwind CSS.
     -->
     <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
@@ -54,7 +57,7 @@
                     </div>
                 </div>
                 <div class="md:hidden">
-                    <button id="mobile-menu-button" aria-controls="mobile-menu" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white">
+                    <button id="mobile-menu-button" aria-controls="mobile-menu" aria-expanded="false" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white">
                         <span class="sr-only">Open main menu</span>
                         <svg class="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
@@ -86,24 +89,18 @@
                 </div>
             </div>
 
-            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
                 <div class="card p-6">
                     <h3 class="font-bold text-xl mb-2">QBI Deduction Made Permanent</h3>
                     <div class="flex gap-2 mb-3"><span class="pill pill-smb">SMB</span><span class="pill pill-peo">PEO</span></div>
-                    <p class="text-gray-600 mb-4">The 20% pass-through deduction is now a permanent part of the tax code, providing long-term certainty for S-corps, partnerships, and sole proprietors.</p>
+                    <p class="text-gray-600 mb-4">The 20% pass-through deduction is now permanent and enhanced, providing long-term certainty for S-corps, partnerships, and sole proprietors.</p>
                     <a href="#tax-investment" class="font-semibold text-teal-700 hover:text-teal-900">Explore QBI Changes &rarr;</a>
                 </div>
                 <div class="card p-6">
                     <h3 class="font-bold text-xl mb-2">100% R&D Expensing Returns</h3>
                     <div class="flex gap-2 mb-3"><span class="pill pill-smb">SMB</span><span class="pill pill-peo">PEO</span></div>
-                    <p class="text-gray-600 mb-4">Domestic R&D costs are once again fully deductible in the year incurred, boosting cash flow for innovative companies. A critical strategic choice awaits.</p>
+                    <p class="text-gray-600 mb-4">Domestic R&D costs are once again fully deductible in the year incurred, boosting cash flow for innovative companies.</p>
                     <a href="#tax-investment" class="font-semibold text-teal-700 hover:text-teal-900">Analyze R&D Options &rarr;</a>
-                </div>
-                <div class="card p-6">
-                    <h3 class="font-bold text-xl mb-2">"No Tax on Tips/Overtime"</h3>
-                    <div class="flex gap-2 mb-3"><span class="pill pill-smb">SMB</span><span class="pill pill-peo">PEO</span></div>
-                    <p class="text-gray-600 mb-4">Temporary deductions make qualified tip and overtime pay tax-free for many workers, but create significant new payroll reporting burdens for employers.</p>
-                    <a href="#employee-benefits" class="font-semibold text-teal-700 hover:text-teal-900">See Payroll Impact &rarr;</a>
                 </div>
                 <div class="card p-6">
                     <h3 class="font-bold text-xl mb-2">Supercharged QSBS Incentive</h3>
@@ -116,6 +113,24 @@
                     <div class="flex gap-2 mb-3"><span class="pill pill-smb">SMB</span><span class="pill pill-peo">PEO</span></div>
                     <p class="text-gray-600 mb-4">Permanent changes make it easier to combine HSAs with telehealth and Direct Primary Care (DPC), enabling innovative, cost-effective health plans.</p>
                     <a href="#employee-benefits" class="font-semibold text-teal-700 hover:text-teal-900">Discover Benefit Strategies &rarr;</a>
+                </div>
+                <div class="card p-6">
+                    <h3 class="font-bold text-xl mb-2">Enhanced Child Care Credit</h3>
+                    <div class="flex gap-2 mb-3"><span class="pill pill-smb">SMB</span><span class="pill pill-peo">PEO</span></div>
+                    <p class="text-gray-600 mb-4">The employer credit for child care support is dramatically increased, making it a financially viable benefit for many small businesses.</p>
+                    <a href="#employee-benefits" class="font-semibold text-teal-700 hover:text-teal-900">See the New Credit &rarr;</a>
+                </div>
+                <div class="card p-6">
+                    <h3 class="font-bold text-xl mb-2">"No Tax on Tips/Overtime"</h3>
+                    <div class="flex gap-2 mb-3"><span class="pill pill-smb">SMB</span><span class="pill pill-peo">PEO</span></div>
+                    <p class="text-gray-600 mb-4">Temporary deductions make qualified tip and overtime pay tax-free for many workers, but create significant new payroll reporting burdens.</p>
+                    <a href="#employee-benefits" class="font-semibold text-teal-700 hover:text-teal-900">See Payroll Impact &rarr;</a>
+                </div>
+                <div class="card p-6">
+                    <h3 class="font-bold text-xl mb-2">Simplified 1099 Reporting</h3>
+                    <div class="flex gap-2 mb-3"><span class="pill pill-smb">SMB</span></div>
+                    <p class="text-gray-600 mb-4">The confusing $600 1099-K threshold is repealed, and the 1099-NEC threshold is increased, reducing paperwork for many.</p>
+                    <a href="#tax-investment" class="font-semibold text-teal-700 hover:text-teal-900">Learn About Reporting &rarr;</a>
                 </div>
                 <div class="card p-6">
                     <h3 class="font-bold text-xl mb-2">ERTC Enforcement & PEO Shield</h3>
@@ -231,6 +246,22 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="card p-8">
+                    <div class="flex gap-2 mb-3"><span class="pill pill-smb">SMB</span></div>
+                    <h3 class="text-2xl font-semibold mb-4">Simplified Information Reporting (Sec. 70432, 70433)</h3>
+                    <p class="text-gray-600 mb-6">The Act significantly reduces the administrative burden for businesses that use freelancers or participate in the gig economy. The confusing $600 Form 1099-K threshold is repealed, and the Form 1099-NEC threshold is increased, meaning less paperwork for small businesses.</p>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="bg-stone-50 border rounded-lg p-6">
+                            <h4 class="font-bold text-lg text-gray-800">Form 1099-K (Payment Apps)</h4>
+                            <p class="text-gray-600 mt-2">The reporting threshold reverts to the previous standard: more than 200 transactions **and** over $20,000 in payments.</p>
+                        </div>
+                        <div class="bg-stone-50 border rounded-lg p-6">
+                            <h4 class="font-bold text-lg text-gray-800">Form 1099-NEC (Contractors)</h4>
+                            <p class="text-gray-600 mt-2">The reporting threshold is increased from $600 to **$2,000**, and will be indexed for inflation.</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -258,9 +289,31 @@
                             <h4 class="font-bold text-lg text-red-800">Employer/PEO Burden</h4>
                             <ul class="mt-2 space-y-2 text-red-700">
                                <li>&#9888; <span class="font-semibold">Major Payroll Overhaul:</span> Requires new pay codes and system logic.</li>
-                               <li>&#9888; <span class="font-semibold">New W-2/1099 Reporting:</span> Must separately track and report qualified amounts.</li>
+                               <li>&#9888; <span class="font-semibold">New W-2/1099 Reporting:</span> The IRS will add new boxes to these forms to track qualified amounts.</li>
                                <li>&#9888; <span class="font-semibold">High Compliance Risk:</span> Ambiguity in rules creates potential for disputes and wage recharacterization pressure.</li>
                             </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card p-8">
+                    <div class="flex gap-2 mb-3"><span class="pill pill-smb">SMB</span><span class="pill pill-peo">PEO</span></div>
+                    <h3 class="text-2xl font-semibold mb-4">Enhanced Employer Child Care Credit (Sec. 70401)</h3>
+                    <p class="text-gray-600 mb-6">The Act dramatically increases the tax credit for employers who provide child care support, reframing it as a financially viable strategy for recruitment and retention. The credit is now permanent and significantly more valuable, especially for small businesses.</p>
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <div class="p-6 bg-stone-50 rounded-lg border">
+                           <h4 class="font-semibold text-lg mb-2">Old Credit</h4>
+                           <p class="text-2xl font-bold mb-2">25%</p>
+                           <p class="text-gray-600 mb-4">of qualified expenditures.</p>
+                           <hr class="my-4">
+                           <p class="text-gray-600">Annual Cap: <span class="font-bold">$150,000</span></p>
+                        </div>
+                        <div class="p-6 bg-teal-50 rounded-lg border border-teal-200">
+                           <h4 class="font-semibold text-lg mb-2 text-teal-800">New Credit (for SMBs)</h4>
+                           <p class="text-2xl font-bold mb-2 text-teal-700">50%</p>
+                           <p class="text-teal-700 mb-4">of qualified expenditures.</p>
+                           <hr class="my-4 border-teal-200">
+                           <p class="text-teal-700">Annual Cap: <span class="font-bold">$600,000</span></p>
                         </div>
                     </div>
                 </div>
@@ -298,6 +351,18 @@
                         </div>
                         <p class="mt-6 text-gray-700 text-sm">These two provisions together create a clear pathway for a powerful new benefits strategy for small businesses. The HDHP/HSA model offers a way to control premium costs but can leave employees with high out-of-pocket expenses for routine primary care. DPC, in contrast, offers affordable, predictable, and accessible primary care for a flat monthly fee. By making these two models fully compatible, the Act enables an integrated, three-part strategy: a low-premium HDHP for catastrophic coverage, a DPC arrangement for accessible routine and preventive care, and an employee-owned HSA to pay for the DPC fees and other out-of-pocket costs on a tax-free basis. This combination allows small businesses to offer a compelling benefits package that addresses both cost control for the employer and access to quality care for the employee.</p>
                     </div>
+                </div>
+                
+                <div class="card p-8">
+                    <div class="flex gap-2 mb-3"><span class="pill pill-smb">SMB</span><span class="pill pill-peo">PEO</span></div>
+                    <h3 class="text-2xl font-semibold mb-4">Paid Family & Medical Leave Credit (Sec. 70304)</h3>
+                    <p class="text-gray-600 mb-6">The Act makes the Paid Family and Medical Leave (PFML) credit permanent and more flexible. Employers can now claim the credit based on a portion of premiums paid for a PFML insurance policy, not just on wages paid during an employee's leave. This change does not affect employee W-2 reporting but simplifies the process for employers to claim the credit on their business tax returns (Form 8994).</p>
+                </div>
+
+                 <div class="card p-8">
+                    <div class="flex gap-2 mb-3"><span class="pill pill-smb">SMB</span><span class="pill pill-peo">PEO</span></div>
+                    <h3 class="text-2xl font-semibold mb-4">Student Loan Repayment Assistance (Sec. 70412, 82001)</h3>
+                    <p class="text-gray-600 mb-6">The Act makes permanent the popular provision allowing employers to provide up to $5,250 per employee per year in tax-free student loan repayment assistance. This benefit is now even more powerful when combined with the new federal Repayment Assistance Plan (RAP), which can result in employer contributions going directly toward loan principal, accelerating an employee's path out of debt.</p>
                 </div>
             </div>
         </section>
@@ -398,7 +463,7 @@
 
             <div id="accordion-container" class="space-y-4">
                 <div class="card">
-                    <button class="accordion-header w-full flex justify-between items-center text-left p-6" aria-expanded="false">
+                    <button class="accordion-header w-full flex justify-between items-center text-left p-6">
                         <span class="text-xl font-semibold">ERTC Enforcement & The CPEO Shield (Sec. 70605)</span>
                         <span class="accordion-icon text-2xl font-thin text-gray-500">+</span>
                     </button>
@@ -419,19 +484,19 @@
                     </div>
                 </div>
                  <div class="card">
-                    <button class="accordion-header w-full flex justify-between items-center text-left p-6" aria-expanded="false">
+                    <button class="accordion-header w-full flex justify-between items-center text-left p-6">
                         <span class="text-xl font-semibold">Payroll System Overhaul</span>
                          <span class="accordion-icon text-2xl font-thin text-gray-500">+</span>
                     </button>
                     <div class="accordion-content px-6">
                          <div class="py-6 border-t">
-                             <p class="text-gray-600 mb-4">The "No Tax on Tips/Overtime" provisions require a major re-engineering of core payroll systems to separately track and report qualified pay types. The Act provides a "reasonable method" standard for 2025, but this ambiguity itself is a risk. PEOs must immediately begin developing and documenting their methodology while preparing for more prescriptive rules in 2026.</p>
-                             <p class="font-semibold text-gray-700">Action Item: Task product and engineering with scoping new payroll features immediately. Issue client guidance on the 2025 "reasonable method" by Q1 2025.</p>
+                             <p class="text-gray-600 mb-4">The "No Tax on Tips/Overtime" provisions require a major re-engineering of core payroll systems. This includes building logic to separately track and report qualified pay types, which will necessitate **preparing for new, distinct boxes on Forms W-2 and 1099** that the IRS will create to administer the deductions. The Act provides a "reasonable method" standard for 2025, but this ambiguity itself is a risk. PEOs must immediately begin developing and documenting their methodology while preparing for more prescriptive rules in 2026.</p>
+                             <p class="font-semibold text-gray-700 mt-4">Action Item: Task product and engineering with scoping new payroll features immediately. Issue client guidance on the 2025 "reasonable method" by Q1 2025.</p>
                         </div>
                     </div>
                 </div>
                  <div class="card">
-                    <button class="accordion-header w-full flex justify-between items-center text-left p-6" aria-expanded="false">
+                    <button class="accordion-header w-full flex justify-between items-center text-left p-6">
                         <span class="text-xl font-semibold">Moving Up the Value Chain: New Services</span>
                          <span class="accordion-icon text-2xl font-thin text-gray-500">+</span>
                     </button>
@@ -459,7 +524,7 @@
     <footer class="bg-gray-800 text-white mt-16">
         <div class="container mx-auto py-8 px-4 sm:px-6 lg:px-8 text-center">
             <p>BBB Navigator</p>
-            <p class="text-sm text-gray-400 mt-2">This tool provides a summary and analysis for informational purposes only. It does not constitute legal or tax advice. </p>
+            <p class="text-sm text-gray-400 mt-2">This tool provides a summary and analysis for informational purposes only. It does not constitute legal or tax advice. Consult with qualified professionals for guidance on your specific situation.</p>
         </div>
     </footer>
 
@@ -481,23 +546,36 @@
             };
 
             const onScroll = () => {
+                const scrollY = window.scrollY;
                 let currentSection = '';
                 sections.forEach(section => {
                     const sectionTop = section.offsetTop;
-                    if (window.scrollY >= sectionTop - 80) {
+                    if (scrollY >= sectionTop - 80) {
                         currentSection = section.getAttribute('id');
                     }
                 });
 
                 navLinks.forEach(link => {
                     link.classList.remove('active');
+                    link.removeAttribute('aria-current');
                     if (link.getAttribute('href').substring(1) === currentSection) {
                         link.classList.add('active');
+                        link.setAttribute('aria-current', 'page');
                     }
                 });
             };
 
-            window.addEventListener('scroll', onScroll);
+            // throttle with rAF
+            let isTicking = false;
+            window.addEventListener('scroll', () => {
+                if (!isTicking) {
+                    window.requestAnimationFrame(() => {
+                        onScroll();
+                        isTicking = false;
+                    });
+                    isTicking = true;
+                }
+            });
             
             navLinks.forEach(link => {
                 link.addEventListener('click', (e) => {
@@ -506,6 +584,8 @@
                         behavior: 'smooth'
                     });
                     activateNavLink(link);
+                    navLinks.forEach(l => l.removeAttribute('aria-current'));
+                    link.setAttribute('aria-current','page');
                     if(!mobileMenu.classList.contains('hidden')){
                         mobileMenu.classList.add('hidden');
                     }
@@ -526,11 +606,6 @@
                 const newPhaseoutEnd = { single: 125000, mfj: 300000 };
                 
                 let oldStatus, newStatus, takeaway;
-
-                if(status === 'mfj'){
-                     newThresholds.single = 150000;
-                     newPhaseoutEnd.single = 300000;
-                }
 
                 if (income <= oldThresholds[status]) { oldStatus = "Full Deduction"; }
                 else if (income > oldThresholds[status] && income <= oldPhaseoutEnd[status]) { oldStatus = "Partial Deduction"; }
@@ -668,30 +743,34 @@
             });
 
             const accordionHeaders = document.querySelectorAll('.accordion-header');
-            accordionHeaders.forEach(header => {
+            accordionHeaders.forEach((header, idx) => {
+                const content = header.nextElementSibling;
+                // set up ids & aria
+                const contentId = `accordion-content-${idx}`;
+                content.id = contentId;
+                header.setAttribute('aria-controls', contentId);
+                header.setAttribute('aria-expanded','false');
+
                 header.addEventListener('click', () => {
-                    const content = header.nextElementSibling;
-                    const icon = header.querySelector('.accordion-icon');
+                    const isOpen = header.getAttribute('aria-expanded') === 'true';
 
-                    const isOpen = content.style.maxHeight && content.style.maxHeight !== '0px';
-
-                    // Close all other accordions
-                    document.querySelectorAll('.accordion-content').forEach(c => {
-                        if (c !== content) {
-                            c.style.maxHeight = '0px';
-                            c.previousElementSibling.querySelector('.accordion-icon').textContent = '+';
-                            c.previousElementSibling.setAttribute('aria-expanded', 'false');
+                    // close others
+                    accordionHeaders.forEach(h => {
+                        if (h !== header) {
+                            h.setAttribute('aria-expanded','false');
+                            h.nextElementSibling.style.maxHeight = '0px';
+                            h.querySelector('.accordion-icon').textContent = '+';
                         }
                     });
 
                     if (isOpen) {
+                        header.setAttribute('aria-expanded','false');
                         content.style.maxHeight = '0px';
-                        icon.textContent = '+';
-                        header.setAttribute('aria-expanded', 'false');
+                        header.querySelector('.accordion-icon').textContent = '+';
                     } else {
+                        header.setAttribute('aria-expanded','true');
                         content.style.maxHeight = content.scrollHeight + 'px';
-                        icon.textContent = '-';
-                        header.setAttribute('aria-expanded', 'true');
+                        header.querySelector('.accordion-icon').textContent = '-';
                     }
                 });
             });
